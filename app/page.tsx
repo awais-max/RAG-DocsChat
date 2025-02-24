@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
-import { Loader } from "@/components/loader"
+import { Loader } from "@/components/Loader"
 import { cn } from "@/lib/utils"
 import { v4 as uuidv4 } from "uuid"
+
 
 export default function Page() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
