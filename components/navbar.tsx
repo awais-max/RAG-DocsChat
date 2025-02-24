@@ -17,13 +17,13 @@ export default function Navbar() {
    
         </nav>
         <div className="flex items-center space-x-4">
-          <Link href="https://github.com/amanesoft" target="_blank" rel="noreferrer">
+          <Link href="https://github.com/awais-max/RAG-DocsChat" target="_blank" rel="noreferrer">
             <Button variant="ghost" size="icon">
               <Github className="h-4 w-4" />
               <span className="sr-only">GitHub</span>
             </Button>
           </Link>
-          <Link href="https://www.linkedin.com/in/awais1ali/">
+          <Link href="https://www.linkedin.com/in/awais1ali/" className="md:block lg:block hidden">
           <Button variant="ghost" size="sm">
             Contact Awais
           </Button>
