@@ -200,7 +200,7 @@ These embeddings have now been stored inside our Pinecone vector database, a pow
                     className="h-10 w-30"
                   />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">Click to Upload or Drop PDF/DOC here</h3>
+                  <h3 className="text-lg font-semibold mb-2">Upload or Drop PDF/DOC here to start chat</h3>
                   <p className="text-muted-foreground mb-6">Upload files upto 50 MB</p>
                   <div className="flex flex-col items-center">
                     <label className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg cursor-pointer inline-flex items-center gap-2 hover:bg-primary/90 transition-colors">
