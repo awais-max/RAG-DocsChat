@@ -14,51 +14,80 @@ import { v4 as uuidv4 } from "uuid"
 
 
 export default function Page() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([])
-  const [inputMessage, setInputMessage] = useState("")
-  const [isDragging, setIsDragging] = useState(false)
-  const [sessionId, setSessionId] = useState<string>("")
-  const [isUploading, setIsUploading] = useState(false)
-  const [isResponding, setIsResponding] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [messages, setMessages] = useState<Array<{ text: string; isUser: boolean }>>([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [sessionId, setSessionId] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [isResponding, setIsResponding] = useState(false);
+  const [isDocumentReady, setIsDocumentReady] = useState(false); // New state
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    const formData = new FormData()
-    formData.append("document", file)
+    const formData = new FormData();
+    formData.append("document", file);
 
-    const newSessionId = uuidv4()
-    formData.append("sessionId", newSessionId)
+    const newSessionId = uuidv4();
+    formData.append("sessionId", newSessionId);
 
-    setIsUploading(true)
+    setIsUploading(true);
     try {
       const response = await axios.post("https://document-chat-backend.vercel.app/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-      })
-      console.log("Upload response:", response.data)
+      });
+      console.log("Upload response:", response.data);
       if (response.data.success) {
-        setSelectedFile(file)
-        setSessionId(newSessionId)
+        setSelectedFile(file);
+        setSessionId(newSessionId);
         setMessages([
           {
-            text: `we've successfully uploaded your file, "${file.name}", to our system. As part of the upload process, we converted the content of your file into embeddings, which are essentially numerical representations of the text that allow our AI models to understand and process the information more efficiently.
-
-These embeddings have now been stored inside our Pinecone vector database, a powerful tool that enables us to manage and retrieve complex data structures like the one we've created from your file. This means that your file has been transformed into a knowledge base that can be easily accessed and utilized by our Deepseek platform.Let's chat about your document`,
+            text: `I've successfully uploaded your file, "${file.name}", to our system. Now I am converting the content of your file into embeddings, which are essentially numerical representations of the text that allow our AI models to understand and process the information more efficiently.
+These embeddings then stored inside our Pinecone vector database.\n Just wait a moment Before we start chat.`,
             isUser: false,
           },
-        ])
+        ]);
+
+        setIsDocumentReady(false);
+        setTimeout(() => {
+          setIsDocumentReady(true); 
+        }, 10000); 
       }
     } catch (error: any) {
-      console.error("Upload error:", error.response ? error.response.data : error.message)
-      alert("Error uploading file: " + (error.response?.data?.error || error.message))
+      console.error("Upload error:", error.response ? error.response.data : error.message);
+      alert("Error uploading file: " + (error.response?.data?.error || error.message));
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputMessage.trim() || !sessionId || !isDocumentReady) return; // Disable submit if document is not ready
+
+    setMessages((prev) => [...prev, { text: inputMessage, isUser: true }]);
+    setInputMessage("");
+    setIsResponding(true);
+
+    try {
+      const response = await axios.post("https://document-chat-backend.vercel.app/chat", {
+        question: inputMessage,
+        sessionId: sessionId,
+      });
+
+      if (response.data.response) {
+        setMessages((prev) => [...prev, { text: response.data.response, isUser: false }]);
+      }
+    } catch (error: any) {
+      console.error("Chat error:", error.response ? error.response.data : error.message);
+      alert("Error communicating with server: " + (error.response?.data?.error || error.message));
+    } finally {
+      setIsResponding(false);
+    }
+  };
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     setIsDragging(false)
@@ -74,32 +103,6 @@ These embeddings have now been stored inside our Pinecone vector database, a pow
       ])
     }
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputMessage.trim() || !sessionId) return
-
-    setMessages((prev) => [...prev, { text: inputMessage, isUser: true }])
-    setInputMessage("")
-    setIsResponding(true)
-
-    try {
-      const response = await axios.post("https://document-chat-backend.vercel.app/chat", {
-        question: inputMessage,
-        sessionId: sessionId,
-      })
-
-      if (response.data.response) {
-        setMessages((prev) => [...prev, { text: response.data.response, isUser: false }])
-      }
-    } catch (error: any) {
-      console.error("Chat error:", error.response ? error.response.data : error.message)
-      alert("Error communicating with server: " + (error.response?.data?.error || error.message))
-    } finally {
-      setIsResponding(false)
-    }
-  }
-
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto"
@@ -281,10 +284,17 @@ These embeddings have now been stored inside our Pinecone vector database, a pow
                       </div>
                     </div>
                   ))}
-                  {isResponding && (
+                                  {isResponding && (
                     <div className="flex justify-start">
                       <div className="max-w-[85%] p-4 rounded-2xl shadow-sm bg-muted text-foreground">
                         <Loader text="Generating response..." />
+                      </div>
+                    </div>
+                  )}
+                  {!isDocumentReady && ( // Show loading state while waiting for Pinecone indexing
+                    <div className="flex justify-start">
+                      <div className="max-w-[85%] p-4 rounded-2xl shadow-sm bg-muted text-foreground">
+                        <Loader text="Preparing document for chat..." />
                       </div>
                     </div>
                   )}
@@ -299,22 +309,23 @@ These embeddings have now been stored inside our Pinecone vector database, a pow
                       onChange={(e) => setInputMessage(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSubmit(e)
+                          e.preventDefault();
+                          handleSubmit(e);
                         }
                       }}
-                      placeholder="Ask about your document..."
+                      placeholder={isDocumentReady ? "Ask about your document..." : "Preparing document..."}
                       className="flex-1 bg-transparent border-0 resize-none max-h-[20px] min-h-[44px] p-2 focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
                       rows={1}
                       style={{
                         overflow: "hidden",
                         height: "auto",
                       }}
+                      disabled={!isDocumentReady} // Disable input until document is ready
                     />
                     <Button
                       type="submit"
                       className="bg-primary hover:bg-primary/90 text-primary-foreground transition-smooth rounded-xl px-6"
-                      disabled={isResponding}
+                      disabled={isResponding || !isDocumentReady} // Disable button until document is ready
                     >
                       Send
                     </Button>
@@ -327,6 +338,5 @@ These embeddings have now been stored inside our Pinecone vector database, a pow
       </div>
       <Footer />
     </div>
-  )
+  );
 }
-
