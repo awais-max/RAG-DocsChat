@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="">
       <div className="container  py-3">
         <p className="text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Made with Love ❤ by Awais Rao in Lahore
+          © {new Date().getFullYear()} Made with Love ❤ in Lahore
         </p>
       </div>
     </footer>
